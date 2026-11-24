@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PRICES, estimate, compareAlternatives, validateInputs } from './pricing.js';
+import { PRICES, OFFICIAL_CHECKPOINTS, estimate, compareAlternatives, validateInputs } from './pricing.js';
 
 const base = { accounts: 100, seats: 1 };
 
@@ -13,99 +13,157 @@ test('PRICES: every entry has value, source, as_of (ISO date), confidence', () =
   }
 });
 
-test('minimum price: 1 account and 150 accounts both cost the $1,500 base', () => {
+test('PRICES: TaxDome list-price entries come from the pricing page, high confidence, no leftover range assumptions', () => {
+  for (const k of ['td_base_annual', 'td_included_accounts', 'td_included_seats', 'td_custom_above_accounts', 'td_extra_tiers', 'td_overage_from', 'td_ai_monthly']) {
+    assert.equal(PRICES[k].source, 'https://taxdome.com/pricing', k);
+    assert.equal(PRICES[k].as_of, '2026-11-24', k);
+    assert.equal(PRICES[k].confidence, 'high', k);
+  }
+  assert.deepEqual(PRICES.td_extra_tiers.value, [[1, 15], [50, 12], [200, 10.5], [500, 9], [1000, 7.5], [2000, 6], [3000, 5]]);
+  assert.match(PRICES.td_extra_tiers.note, /50/);
+  assert.match(PRICES.td_extra_tiers.note, /200/);
+  assert.equal(PRICES.td_discount_existing_pct.confidence, 'low');
+  for (const gone of ['td_extra_prepaid_floor', 'td_tier_500_from_total', 'td_extra_ondemand_small']) assert.equal(gone in PRICES, false, gone);
+});
+
+// Primary source: taxdome.com/pricing, official calculator, read 2026-11-24 (taxdome-pricing-page-2026-11-24.md).
+const OFFICIAL = [
+  [150, 1500], [151, 1515], [200, 2100], [235, 2520], [250, 2700], [300, 3300],
+  [400, 4125], [499, 5165], [500, 5175], [650, 6000], [750, 6900], [900, 8250],
+  [1000, 9000], [1500, 11625], [2000, 13500], [2500, 15600], [3000, 16500],
+];
+
+test('all 17 official calculator values match the list price exactly (no add-ons)', () => {
+  assert.equal(OFFICIAL.length, 17);
+  for (const [accounts, annual] of OFFICIAL) {
+    const r = estimate({ accounts, seats: 1 });
+    assert.equal(r.valid, true, String(accounts));
+    assert.equal(r.price, annual, `${accounts} active clients`);
+  }
+  // the exported checkpoint list is the same table
+  assert.deepEqual(OFFICIAL_CHECKPOINTS, OFFICIAL);
+});
+
+test('list price is a single number, not a range', () => {
+  const r = estimate({ accounts: 235, seats: 1 });
+  assert.equal(typeof r.price, 'number');
+  assert.equal('low' in r, false);
+  assert.equal('high' in r, false);
+});
+
+test('minimum price: 1 to 150 active clients all cost the $1,500 base', () => {
   for (const accounts of [1, 100, 150]) {
     const r = estimate({ accounts, seats: 1 });
-    assert.equal(r.valid, true);
-    assert.equal(r.low, 1500);
-    assert.equal(r.high, 1500);
+    assert.equal(r.price, 1500);
     assert.equal(r.extraAccounts, 0);
+    assert.equal(r.extraTotal, 0);
   }
-  assert.equal(estimate({ accounts: 1, seats: 1 }).perAccountLow, 1500);
+  assert.equal(estimate({ accounts: 1, seats: 1 }).perAccount, 1500);
 });
 
-test('tier boundary: 151st account is the first extra (prepaid $6-$12)', () => {
+test('first extra client costs $15; tier rate is reported', () => {
   const r = estimate({ accounts: 151, seats: 1 });
   assert.equal(r.extraAccounts, 1);
-  assert.equal(r.low, 1506);
-  assert.equal(r.high, 1512);
+  assert.equal(r.extraRate, 15);
+  assert.equal(r.price, 1515);
+  assert.equal(estimate({ accounts: 235, seats: 1 }).extraRate, 12);   // 85 extras: 50+ tier
+  assert.equal(estimate({ accounts: 400, seats: 1 }).extraRate, 10.5); // 250 extras: 200+ tier
+  assert.equal(estimate({ accounts: 3000, seats: 1 }).extraRate, 6);   // own tier; the 5.00 tier is cheaper in total
 });
 
-test('extra accounts, prepaid, 235 accounts: 85 extras x $6..$12', () => {
-  const r = estimate({ accounts: 235, seats: 1 });
-  assert.equal(r.low, 2010);
-  assert.equal(r.high, 2520);
-  assert.equal(r.perAccountLow, 8.55);
-  assert.equal(r.perAccountHigh, 10.72);
+test('lowest-total rule: price is the minimum of own tier and next tier minimum', () => {
+  // 40..49 extras: 15/each would exceed the 50-extras price of $600, so $600
+  assert.equal(estimate({ accounts: 190, seats: 1 }).price, 2100);
+  assert.equal(estimate({ accounts: 199, seats: 1 }).price, 2100);
+  assert.equal(estimate({ accounts: 189, seats: 1 }).price, 1500 + 39 * 15);
+  // 850 extras (1,000 clients): 850 x 9 = 7,650 > 1,000 x 7.50 = 7,500
+  assert.equal(estimate({ accounts: 1000, seats: 1 }).price, 9000);
+  assert.equal(estimate({ accounts: 1150, seats: 1 }).price, 9000);
+  assert.equal(estimate({ accounts: 1151, seats: 1 }).price, 9000 + 8); // 1,001 x 7.50 = 7,507.50 -> 7,508
 });
 
-test('extra accounts, on demand: singles under a 50-pack cost $15', () => {
-  const r = estimate({ accounts: 151, seats: 1, extraMode: 'on_demand' });
-  assert.equal(r.low, 1515);
-  assert.equal(r.high, 1515);
+test('price rounds up to whole dollars (499 clients: 3,664.50 -> 3,665)', () => {
+  const r = estimate({ accounts: 499, seats: 1 });
+  assert.equal(r.extraTotal, 3665);
+  assert.equal(r.price, 5165);
+  assert.ok(Number.isInteger(r.price));
 });
 
-test('extra accounts, on demand, 500 total: 350 extras x $10.50..$15', () => {
-  const r = estimate({ accounts: 500, seats: 6, extraMode: 'on_demand' });
-  assert.equal(r.low, 5175);
-  assert.equal(r.high, 6750);
+test('price never goes down when you add clients (1 to 3,000)', () => {
+  let prev = 0;
+  for (let a = 1; a <= 3000; a++) {
+    const p = estimate({ accounts: a, seats: 1 }).price;
+    assert.ok(p >= prev, `${a}: ${p} < ${prev}`);
+    assert.ok(Number.isInteger(p));
+    prev = p;
+  }
 });
 
-test('price tier follows total accounts (1,000 accounts prepaid: $6..$7.50 x 850)', () => {
-  const r = estimate({ accounts: 1000, seats: 1 });
-  assert.equal(r.low, 6600);
-  assert.equal(r.high, 7875);
-});
-
-test('custom pricing above 3,000 accounts or 20 seats, no number invented', () => {
+test('custom pricing above 3,000 active clients or 20 seats, no number invented', () => {
   assert.equal(estimate({ accounts: 3000, seats: 1 }).custom, false);
   const a = estimate({ accounts: 3001, seats: 1 });
-  assert.equal(a.valid, true); assert.equal(a.custom, true); assert.equal(a.low, null);
+  assert.equal(a.valid, true); assert.equal(a.custom, true); assert.equal(a.price, null);
   assert.equal(estimate({ accounts: 100, seats: 20 }).custom, false);
   const s = estimate({ accounts: 100, seats: 21 });
-  assert.equal(s.custom, true); assert.equal(s.high, null);
+  assert.equal(s.custom, true); assert.equal(s.price, null);
 });
 
 test('AI add-on adds a flat $2,400 per year regardless of size', () => {
-  assert.equal(estimate({ ...base, aiAddon: true }).low, 1500 + 2400);
-  const r = estimate({ accounts: 500, seats: 6, extraMode: 'on_demand', aiAddon: true });
-  assert.equal(r.low, 7575);
-  assert.equal(r.high, 9150);
+  assert.equal(estimate({ ...base, aiAddon: true }).price, 1500 + 2400);
+  const r = estimate({ accounts: 500, seats: 6, aiAddon: true });
+  assert.equal(r.price, 7575);   // 5,175 + 2,400
   assert.equal(r.ai, 2400);
 });
 
-test('discount applies to extra accounts only, not to base or AI', () => {
+test('reported 50% discount: separate scenario on extra clients only, list price unchanged', () => {
   const r = estimate({ accounts: 235, seats: 1, extraDiscountPct: 50 });
-  assert.equal(r.low, 1755);
-  assert.equal(r.high, 2010);
+  assert.equal(r.price, 2520);            // list price is never replaced
+  assert.equal(r.discounted, 2010);       // 1,500 + 85 x 12 x 0.5
+  assert.equal(r.discountPct, 50);
   const withAi = estimate({ accounts: 235, seats: 1, extraDiscountPct: 50, aiAddon: true });
-  assert.equal(withAi.low, 1755 + 2400);
-  assert.equal(estimate({ ...base, extraDiscountPct: 50 }).low, 1500);
-  assert.equal(estimate({ accounts: 235, seats: 1, extraDiscountPct: 0 }).low, 2010);
-  assert.equal(estimate({ accounts: 235, seats: 1, extraDiscountPct: 100 }).high, 1500);
+  assert.equal(withAi.price, 2520 + 2400);
+  assert.equal(withAi.discounted, 2010 + 2400);
+  assert.equal(estimate({ ...base, extraDiscountPct: 50 }).discounted, 1500);
+  assert.equal(estimate({ accounts: 235, seats: 1 }).discounted, null);
+  assert.equal(estimate({ accounts: 235, seats: 1, extraDiscountPct: 0 }).discounted, null);
+  assert.equal(estimate({ accounts: 235, seats: 1, extraDiscountPct: 100 }).discounted, 1500);
 });
 
-test('rounding: totals to whole dollars, per-account to cents', () => {
+test('discount rounding: extras rounded up to whole dollars, per-client to cents', () => {
   const r = estimate({ accounts: 235, seats: 1, extraDiscountPct: 33 });
-  assert.equal(r.low, 1842);   // 1500 + 341.70
-  assert.equal(r.high, 2183);  // 1500 + 683.40
-  assert.equal(r.perAccountLow, 7.84); // 1842 / 235
-  assert.ok(Number.isInteger(r.low) && Number.isInteger(r.high));
+  assert.equal(r.discounted, 2184);   // 1,020 x 0.67 = 683.40 -> 684
+  assert.equal(r.perAccountDiscounted, 9.29); // 2184 / 235
+  assert.equal(r.perAccount, 10.72);          // 2520 / 235
 });
 
-test('difference to previous annual price', () => {
-  const r = estimate({ accounts: 235, seats: 1, previousAnnual: 700 });
-  assert.equal(r.diffLow, 1310);
-  assert.equal(r.diffHigh, 1820);
-  assert.equal(estimate({ accounts: 235, seats: 1 }).diffLow, null);
-  assert.equal(estimate({ accounts: 235, seats: 1, previousAnnual: null }).diffHigh, null);
-  assert.equal(estimate({ accounts: 235, seats: 1, previousAnnual: '' }).diffHigh, null);
-  assert.equal(estimate({ ...base, previousAnnual: 2000 }).diffLow, -500);
+test('difference to previous annual price (list and discount scenario)', () => {
+  const r = estimate({ accounts: 235, seats: 1, previousAnnual: 700, extraDiscountPct: 50 });
+  assert.equal(r.diff, 1820);
+  assert.equal(r.diffDiscounted, 1310);
+  assert.equal(estimate({ accounts: 235, seats: 1 }).diff, null);
+  assert.equal(estimate({ accounts: 235, seats: 1, previousAnnual: null }).diff, null);
+  assert.equal(estimate({ accounts: 235, seats: 1, previousAnnual: '' }).diff, null);
+  assert.equal(estimate({ ...base, previousAnnual: 2000 }).diff, -500);
 });
 
-test('legacy list estimate is seats x $1,000 and labelled as list price', () => {
-  const r = estimate({ accounts: 100, seats: 3 });
-  assert.equal(r.legacyListEstimate, 3000);
+test('overage hint: clients added mid-year without a pack cost up to $15 each (upper bound)', () => {
+  const r = estimate({ accounts: 235, seats: 1, addedDuringYear: 40 });
+  assert.equal(r.overage.added, 40);
+  assert.equal(r.overage.upperBound, 600);
+  // buying room for 275 instead of 235, computed from the same model
+  assert.equal(r.overage.buyAheadPrice, estimate({ accounts: 275, seats: 1 }).price);
+  assert.equal(r.overage.buyAheadExtra, estimate({ accounts: 275, seats: 1 }).price - 2520);
+  assert.ok(r.overage.buyAheadExtra <= r.overage.upperBound);
+  assert.equal(estimate({ accounts: 235, seats: 1 }).overage, null);
+  assert.equal(estimate({ accounts: 235, seats: 1, addedDuringYear: 0 }).overage, null);
+  // growth past 3,000 has no published price
+  const big = estimate({ accounts: 2990, seats: 1, addedDuringYear: 50 });
+  assert.equal(big.overage.upperBound, 750);
+  assert.equal(big.overage.buyAheadPrice, null);
+});
+
+test('buying a bit too large is cheaper than overage: 190 clients cost the same as 200', () => {
+  assert.equal(estimate({ accounts: 190, seats: 1 }).price, estimate({ accounts: 200, seats: 1 }).price);
 });
 
 test('invalid inputs are rejected with field-level errors', () => {
@@ -123,7 +181,8 @@ test('invalid inputs are rejected with field-level errors', () => {
     [{ accounts: 10, seats: 1, previousAnnual: Infinity }, 'previousAnnual'],
     [{ accounts: 10, seats: 1, extraDiscountPct: -1 }, 'extraDiscountPct'],
     [{ accounts: 10, seats: 1, extraDiscountPct: 101 }, 'extraDiscountPct'],
-    [{ accounts: 10, seats: 1, extraMode: 'monthly' }, 'extraMode'],
+    [{ accounts: 10, seats: 1, addedDuringYear: -1 }, 'addedDuringYear'],
+    [{ accounts: 10, seats: 1, addedDuringYear: 1.5 }, 'addedDuringYear'],
     [{ accounts: 10, seats: 1, aiAddon: 'yes' }, 'aiAddon'],
   ];
   for (const [input, field] of bad) {

@@ -1,36 +1,32 @@
 // Pure pricing logic. No dependencies, no DOM, no network.
 // Every number lives in PRICES with value / source / as_of / confidence.
+// TaxDome list prices: taxdome.com/pricing (primary source, 2026-11-24).
 // Independent estimate, not an offer from TaxDome or any vendor.
 
 const MARKT = 'https://www.cpapracticeadvisor.com/2026/11/12/taxdomes-switch-to-per-client-pricing-what-to-work-out-before-your-2027-renewal/193753/';
-const CARD = 'https://reddit.com/r/taxpros/comments/1xlynzl/_/19s1dv3450x0i';
-const TRACKER = 'https://pricingsaas.com/companies/taxdome';
+const TD = 'https://taxdome.com/pricing';
 const RESEARCH_DATE = '2026-11-24';
 
 export const PRICES = {
-  // ---- TaxDome, per-active-client-account model (from first renewal on/after 2027-01-01) ----
-  td_base_annual: { value: 1500, source: MARKT, as_of: '2026-11-12', confidence: 'medium',
-    note: 'USD per year for the first 150 active accounts and up to 20 team members. Trade-press report; taxdome.com itself was not readable. A Reddit user-posted price card agrees.' },
-  td_included_accounts: { value: 150, source: MARKT, as_of: '2026-11-12', confidence: 'medium', note: 'Active accounts covered by the base price.' },
-  td_included_seats: { value: 20, source: MARKT, as_of: '2026-11-12', confidence: 'medium', note: 'Team members covered by the base price. Above this: custom pricing, no number published.' },
-  td_custom_above_accounts: { value: 3000, source: MARKT, as_of: '2026-11-12', confidence: 'medium', note: 'Above 3,000 accounts: custom pricing, no number published.' },
-  td_extra_prepaid_floor: { value: 6, source: MARKT, as_of: '2026-11-12', confidence: 'low',
-    note: 'USD per extra account, lowest end of "$12 to $6 depending on pack size". The Reddit price card shows no price below $7.50, so this lower end is unconfirmed. Used as the low bound for prepaid extras.' },
-  td_extra_prepaid_small: { value: 12, source: CARD, as_of: '2026-11-02', confidence: 'medium',
-    note: 'USD per extra account, prepaid, 50-pack, used for total accounts below 500. Also the top of the range in the trade-press report.' },
-  td_extra_prepaid_500: { value: 9, source: CARD, as_of: '2026-11-02', confidence: 'low', note: 'Prepaid, 500 tier. Single user-posted copy of the price card.' },
-  td_extra_prepaid_1000: { value: 7.5, source: CARD, as_of: '2026-11-02', confidence: 'low', note: 'Prepaid, 1,000 tier. Single user-posted copy of the price card.' },
-  td_extra_ondemand_small: { value: 13.5, source: CARD, as_of: '2026-11-02', confidence: 'low', note: 'USD per extra account bought mid-term, 50-pack tier (total accounts below 500).' },
-  td_extra_ondemand_500: { value: 10.5, source: CARD, as_of: '2026-11-02', confidence: 'low', note: 'Mid-term, 500 tier. Matches one user who reported $7,575 for 500 accounts incl. AI add-on.' },
-  td_extra_ondemand_1000: { value: 9, source: CARD, as_of: '2026-11-02', confidence: 'low', note: 'Mid-term, 1,000 tier.' },
-  td_extra_ondemand_single: { value: 15, source: MARKT, as_of: '2026-11-12', confidence: 'medium', note: 'USD per single extra account bought on demand (below a 50-pack). Also the high bound for on-demand extras. Price card agrees.' },
-  td_single_below_extras: { value: 50, source: CARD, as_of: '2026-11-02', confidence: 'low', note: 'Fewer extra accounts than this are treated as singles at the on-demand single price.' },
-  td_tier_500_from_total: { value: 500, source: CARD, as_of: '2026-11-02', confidence: 'low',
-    note: 'ASSUMPTION inferred from one data point: the tier is chosen by total accounts, not by extra accounts. Not stated by any source.' },
-  td_tier_1000_from_total: { value: 1000, source: CARD, as_of: '2026-11-02', confidence: 'low', note: 'Same assumption as above.' },
-  td_ai_monthly: { value: 200, source: MARKT, as_of: '2026-11-12', confidence: 'high', note: 'USD per month, flat, AI/MCP/API add-on. Reddit comments say the same.' },
+  // ---- TaxDome list price. Primary source: TaxDome's own pricing page and calculator, read 2026-11-24. ----
+  // Applies from the first renewal on or after 2027-01-01; current customers keep plan and price until then.
+  td_base_annual: { value: 1500, source: TD, as_of: '2026-11-24', confidence: 'high',
+    note: 'USD per year for the first 150 active clients. The minimum applies even with fewer than 150 active clients.' },
+  td_included_accounts: { value: 150, source: TD, as_of: '2026-11-24', confidence: 'high', note: 'Active clients covered by the base price.' },
+  td_included_seats: { value: 20, source: TD, as_of: '2026-11-24', confidence: 'high', note: 'Seats included, no per-seat charge. Above 20 seats: custom pricing, no number published.' },
+  td_custom_above_accounts: { value: 3000, source: TD, as_of: '2026-11-24', confidence: 'high', note: 'Above 3,000 active clients: custom pricing, no number published.' },
+  td_extra_tiers: { value: [[1, 15], [50, 12], [200, 10.5], [500, 9], [1000, 7.5], [2000, 6], [3000, 5]],
+    source: TD, as_of: '2026-11-24', confidence: 'high',
+    note: 'Pairs of [first extra client in the band, USD per extra client]. Extra clients = active clients minus 150. Total for extras = the lower of (extras x own band rate) and (start of next band x its rate), rounded up to whole dollars; TaxDome says it applies the lowest total. Modeled from 17 values of the official calculator, all reproduced exactly. Only bracketed, not read directly: the band starts at 50 (between 1 and 50 extras) and 200 (between 150 and 250 extras), and the bands between 2,350 and 2,850 extras were not checked individually.' },
+  td_overage_from: { value: 15, source: TD, as_of: '2026-11-24', confidence: 'high',
+    note: 'USD per client, "starting at". At the end of each month TaxDome counts active clients above your plan and invoices the overage. A volume pack bought at any time lowers the rate. Shown only as a rough upper bound; the page says "starting at", so the real rate may differ.' },
+  td_carryover_cap_pct: { value: 20, source: TD, as_of: '2026-11-24', confidence: 'high',
+    note: 'Paid but unused clients roll into the next plan year in full as bonus clients. Bonus clients still unused after that year roll over again, up to 20% of the next year purchase. Carried-over clients cannot be refunded. Not modeled in the price.' },
+  td_ai_monthly: { value: 200, source: TD, as_of: '2026-11-24', confidence: 'high', note: 'USD per month, AI add-on.' },
+  td_client_care_monthly: { value: 100, source: TD, as_of: '2026-11-24', confidence: 'high', note: 'USD per month, Managed Client Care add-on. Listed for reference, not added to the estimate.' },
+  td_premium_support_monthly: { value: 249, source: TD, as_of: '2026-11-24', confidence: 'high', note: 'USD per month, Premium support add-on. Listed for reference, not added to the estimate. White-labeled client app and Extended API: price on request.' },
   td_discount_existing_pct: { value: 50, source: MARKT, as_of: '2026-11-12', confidence: 'low',
-    note: 'Percent off extra accounts for smaller existing customers, according to a statement by the TaxDome president quoted by CPA Practice Advisor. Not on the pricing page; terms unknown. Never applied unless you tick it.' },
+    note: 'Percent off extra clients for smaller existing customers, according to a statement by the TaxDome president quoted by CPA Practice Advisor. NOT on the pricing page; terms unknown. Never applied unless you tick it, and then shown as a separate scenario.' },
   td_legacy_seat_list: { value: 1000, source: MARKT, as_of: '2026-11-12', confidence: 'medium',
     note: 'Old list price per seat per year (1-year term). Real contracts differed: users report $600 to $800 per seat and multi-year plans.' },
 
@@ -53,41 +49,53 @@ export const PRICES = {
 const v = (k) => PRICES[k].value;
 const src = (...keys) => keys.map((k) => ({ key: k, source: PRICES[k].source, as_of: PRICES[k].as_of, confidence: PRICES[k].confidence }));
 const cents = (usd) => Math.round(usd * 100);
+
+// Points read from the official calculator on taxdome.com/pricing on 2026-11-24: [active clients, USD per year].
+export const OFFICIAL_CHECKPOINTS = [
+  [150, 1500], [151, 1515], [200, 2100], [235, 2520], [250, 2700], [300, 3300],
+  [400, 4125], [499, 5165], [500, 5175], [650, 6000], [750, 6900], [900, 8250],
+  [1000, 9000], [1500, 11625], [2000, 13500], [2500, 15600], [3000, 16500],
+];
 const usd = (n) => '$' + (Number.isInteger(n) ? n : n.toFixed(2));
 
 export function validateInputs(input) {
   const errors = [];
   const add = (field, message) => errors.push({ field, message });
   if (input === null || typeof input !== 'object') return [{ field: 'input', message: 'Input must be an object.' }];
-  const { accounts, seats, previousAnnual, aiAddon, extraMode, extraDiscountPct } = input;
+  const { accounts, seats, previousAnnual, aiAddon, addedDuringYear, extraDiscountPct } = input;
   if (typeof accounts !== 'number' || !Number.isInteger(accounts) || accounts < 1 || accounts > 1_000_000)
-    add('accounts', 'Active client accounts must be a whole number between 1 and 1,000,000.');
+    add('accounts', 'Active clients must be a whole number between 1 and 1,000,000.');
   if (typeof seats !== 'number' || !Number.isInteger(seats) || seats < 1 || seats > 10_000)
     add('seats', 'Users/seats must be a whole number of at least 1.');
   if (previousAnnual !== undefined && previousAnnual !== null && previousAnnual !== '' &&
       (typeof previousAnnual !== 'number' || !Number.isFinite(previousAnnual) || previousAnnual < 0))
     add('previousAnnual', 'Previous yearly price must be a number of 0 or more, or left empty.');
   if (aiAddon !== undefined && typeof aiAddon !== 'boolean') add('aiAddon', 'AI add-on must be true or false.');
-  if (extraMode !== undefined && extraMode !== 'prepaid' && extraMode !== 'on_demand')
-    add('extraMode', 'Extra accounts must be "prepaid" or "on_demand".');
+  if (addedDuringYear !== undefined && addedDuringYear !== null &&
+      (typeof addedDuringYear !== 'number' || !Number.isInteger(addedDuringYear) || addedDuringYear < 0 || addedDuringYear > 1_000_000))
+    add('addedDuringYear', 'Clients you may add during the year must be a whole number of 0 or more, or left empty.');
   if (extraDiscountPct !== undefined &&
       (typeof extraDiscountPct !== 'number' || !Number.isFinite(extraDiscountPct) || extraDiscountPct < 0 || extraDiscountPct > 100))
     add('extraDiscountPct', 'Discount must be between 0 and 100 percent.');
   return errors;
 }
 
-// Per-extra-account USD range for the given total accounts and mode.
-function extraRate(accounts, extras, mode) {
-  const t500 = accounts >= v('td_tier_500_from_total');
-  const t1000 = accounts >= v('td_tier_1000_from_total');
-  if (mode === 'prepaid') {
-    const top = t1000 ? v('td_extra_prepaid_1000') : t500 ? v('td_extra_prepaid_500') : v('td_extra_prepaid_small');
-    return { low: v('td_extra_prepaid_floor'), high: top };
-  }
-  const single = v('td_extra_ondemand_single');
-  if (extras < v('td_single_below_extras')) return { low: single, high: single };
-  const tier = t1000 ? v('td_extra_ondemand_1000') : t500 ? v('td_extra_ondemand_500') : v('td_extra_ondemand_small');
-  return { low: tier, high: single };
+// Extras (active clients above 150), in cents: lower of own band and the next band's starting price.
+function extrasCents(extras) {
+  if (extras <= 0) return { cents: 0, rate: 0 };
+  const tiers = v('td_extra_tiers');
+  let i = 0;
+  while (i + 1 < tiers.length && extras >= tiers[i + 1][0]) i++;
+  const own = extras * cents(tiers[i][1]);
+  const next = i + 1 < tiers.length ? tiers[i + 1][0] * cents(tiers[i + 1][1]) : Infinity;
+  return { cents: Math.min(own, next), rate: tiers[i][1] };
+}
+
+// List price in USD per year (no add-ons) for a number of active clients; null above the custom threshold.
+function listPrice(accounts) {
+  if (accounts > v('td_custom_above_accounts')) return null;
+  const e = extrasCents(Math.max(0, accounts - v('td_included_accounts')));
+  return v('td_base_annual') + Math.ceil(e.cents / 100);
 }
 
 export function compareAlternatives(seats) {
@@ -142,42 +150,55 @@ export function estimate(input) {
   const errors = validateInputs(input);
   if (errors.length) return { valid: false, errors };
 
-  const { accounts, seats, aiAddon = false, extraMode = 'prepaid', extraDiscountPct = 0 } = input;
+  const { accounts, seats, aiAddon = false, extraDiscountPct = 0 } = input;
   const previousAnnual = (input.previousAnnual === undefined || input.previousAnnual === null || input.previousAnnual === '')
     ? null : input.previousAnnual;
+  const added = input.addedDuringYear || 0;
   const alternatives = compareAlternatives(seats);
   const legacyListEstimate = seats * v('td_legacy_seat_list');
 
   const custom = accounts > v('td_custom_above_accounts') || seats > v('td_included_seats');
   if (custom) {
     return { valid: true, custom: true, reason: accounts > v('td_custom_above_accounts')
-        ? `Above ${v('td_custom_above_accounts')} accounts TaxDome quotes custom pricing; no figure is published.`
-        : `Above ${v('td_included_seats')} team members TaxDome quotes custom pricing; no figure is published.`,
-      low: null, high: null, diffLow: null, diffHigh: null, perAccountLow: null, perAccountHigh: null,
+        ? `Above ${v('td_custom_above_accounts').toLocaleString('en-US')} active clients TaxDome quotes custom pricing; no figure is published.`
+        : `Above ${v('td_included_seats')} seats TaxDome quotes custom pricing; no figure is published.`,
+      price: null, discounted: null, diff: null, diffDiscounted: null, perAccount: null, overage: null,
       legacyListEstimate, alternatives };
   }
 
   const extras = Math.max(0, accounts - v('td_included_accounts'));
-  const rate = extraRate(accounts, extras, extraMode);
-  const keep = (100 - extraDiscountPct) / 100;
-  const extraLowC = Math.round(extras * cents(rate.low) * keep);
-  const extraHighC = Math.round(extras * cents(rate.high) * keep);
-  const baseC = cents(v('td_base_annual'));
-  const aiC = aiAddon ? cents(v('td_ai_monthly')) * 12 : 0;
-  const low = Math.round((baseC + extraLowC + aiC) / 100);
-  const high = Math.round((baseC + extraHighC + aiC) / 100);
+  const e = extrasCents(extras);
+  const extraTotal = Math.ceil(e.cents / 100);
+  const aiYear = aiAddon ? v('td_ai_monthly') * 12 : 0;
+  const price = v('td_base_annual') + extraTotal + aiYear;
   const per = (n) => Math.round((n / accounts) * 100) / 100;
 
+  // Reported discount (trade press only): separate scenario, extras only, never replaces the list price.
+  let discounted = null;
+  if (extraDiscountPct > 0) {
+    const dc = Math.round(e.cents * (100 - extraDiscountPct) / 100);
+    discounted = v('td_base_annual') + Math.ceil(dc / 100) + aiYear;
+  }
+
+  // Upper bound if the user adds clients mid-year without buying a pack; compared with buying room up front.
+  let overage = null;
+  if (added > 0) {
+    const bigger = listPrice(accounts + added);
+    overage = {
+      added, upperBound: added * v('td_overage_from'),
+      buyAheadPrice: bigger === null ? null : bigger + aiYear,
+      buyAheadExtra: bigger === null ? null : bigger - (v('td_base_annual') + extraTotal),
+    };
+  }
+
   return {
-    valid: true, custom: false, low, high,
-    base: v('td_base_annual'), extraAccounts: extras,
-    extraRateLow: rate.low, extraRateHigh: rate.high,
-    extraLow: extraLowC / 100, extraHigh: extraHighC / 100,
-    ai: aiC / 100, discountPct: extraDiscountPct, mode: extraMode,
-    perAccountLow: per(low), perAccountHigh: per(high),
+    valid: true, custom: false, price,
+    base: v('td_base_annual'), extraAccounts: extras, extraRate: e.rate, extraTotal,
+    ai: aiYear, discountPct: extraDiscountPct, discounted,
+    perAccount: per(price), perAccountDiscounted: discounted === null ? null : per(discounted),
     previousAnnual,
-    diffLow: previousAnnual === null ? null : low - previousAnnual,
-    diffHigh: previousAnnual === null ? null : high - previousAnnual,
-    legacyListEstimate, alternatives,
+    diff: previousAnnual === null ? null : price - previousAnnual,
+    diffDiscounted: previousAnnual === null || discounted === null ? null : discounted - previousAnnual,
+    overage, legacyListEstimate, alternatives,
   };
 }

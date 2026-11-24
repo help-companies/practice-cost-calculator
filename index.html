@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TaxDome 2027 Price Estimator</title>
-<meta name="description" content="Independent estimate of what TaxDome's per-active-client pricing will cost a small US tax practice from the 2027 renewal, with alternatives.">
+<meta name="description" content="TaxDome per-active-client price for your firm size, matched to TaxDome's own calculator, plus the change against what you pay now and alternatives at the same number of users.">
 <style>
 :root{--bg:#fafaf7;--fg:#1c1c1a;--muted:#555550;--card:#fff;--line:#d6d6cf;--accent:#0b5c4a;--accent-fg:#fff;--warn-bg:#fff4d6;--warn-fg:#4a3500;--focus:#0b5c4a;}
 @media (prefers-color-scheme: dark){:root{--bg:#141413;--fg:#ececE6;--muted:#b0b0a6;--card:#1d1d1b;--line:#3a3a36;--accent:#6fd3b6;--accent-fg:#0d1a16;--warn-bg:#3a2f0e;--warn-fg:#f3e3b0;--focus:#6fd3b6;}}
@@ -62,7 +62,7 @@ noscript{display:block;margin:1rem 0}
 <div class="wrap">
 <header>
   <h1>What will TaxDome cost your practice after the switch to per-client pricing?</h1>
-  <p class="lead">Since Nov. 2, 2026 TaxDome charges per active client account instead of per seat. Existing customers move over at their first renewal on or after Jan. 1, 2027. Enter your numbers for an estimated yearly range and a comparison with other tools.</p>
+  <p class="lead">Since Nov. 2, 2026 TaxDome charges per active client instead of per seat. Current customers keep their plan and price until their first renewal on or after Jan. 1, 2027. TaxDome's own calculator gives you the new list price. This page gives you the same price (checked against it) and adds what it does not: the change against what you pay now, the price per client, what happens if you add clients mid-year, and what other tools cost for the same number of users.</p>
 </header>
 <noscript>This estimator needs JavaScript. Nothing is sent anywhere; all math runs in your browser.</noscript>
 
@@ -71,14 +71,15 @@ noscript{display:block;margin:1rem 0}
   <form class="card" id="f" novalidate aria-labelledby="fh">
     <h2 id="fh" style="margin-top:0">Your practice</h2>
     <div class="field">
-      <label for="accounts">Active client accounts</label>
+      <label for="accounts">Active clients</label>
       <input id="accounts" name="accounts" type="number" inputmode="numeric" min="1" step="1" value="235" aria-describedby="accounts-h accounts-e">
-      <span class="hint" id="accounts-h">Clients who upload, e-sign, fill an organizer, pay, or message you in a 12-month window. A person and their business count as two accounts.</span>
+      <span class="hint" id="accounts-h">Client accounts with qualifying activity during your plan year, such as a document upload, a signed engagement letter or an invoice paid through TaxDome. Logging in or browsing does not count. Contacts without activity cost nothing. One client account can have many linked contacts.</span>
       <div class="err" id="accounts-e" role="alert"></div>
     </div>
     <div class="field">
-      <label for="seats">Users (seats)</label>
-      <input id="seats" name="seats" type="number" inputmode="numeric" min="1" step="1" value="1" aria-describedby="seats-e">
+      <label for="seats">Seats (users)</label>
+      <input id="seats" name="seats" type="number" inputmode="numeric" min="1" step="1" value="1" aria-describedby="seats-h seats-e">
+      <span class="hint" id="seats-h">20 seats are included. Seats are not charged per person. Used for the comparison with other tools.</span>
       <div class="err" id="seats-e" role="alert"></div>
     </div>
     <div class="field">
@@ -86,37 +87,57 @@ noscript{display:block;margin:1rem 0}
       <input id="prev" name="prev" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g. 700" aria-describedby="prev-e">
       <div class="err" id="prev-e" role="alert"></div>
     </div>
-    <fieldset>
-      <legend>Extra accounts above 150</legend>
-      <div class="check"><input type="radio" id="m-pre" name="mode" value="prepaid" checked><label for="m-pre">Buy ahead in packs at renewal</label></div>
-      <div class="check"><input type="radio" id="m-od" name="mode" value="on_demand"><label for="m-od">Add on demand during the year</label></div>
-    </fieldset>
+    <div class="field">
+      <label for="grow">Clients you might add during the year (optional)</label>
+      <input id="grow" name="grow" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g. 30" aria-describedby="grow-h grow-e">
+      <span class="hint" id="grow-h">Shows what it could cost if you add them without buying room first.</span>
+      <div class="err" id="grow-e" role="alert"></div>
+    </div>
     <div class="check"><input type="checkbox" id="ai" name="ai"><label for="ai">Include the AI add-on</label></div>
-    <div class="check"><input type="checkbox" id="disc" name="disc"><label for="disc">I was offered a discount on extra accounts <span class="hint" id="disc-h"></span></label></div>
+    <div class="check"><input type="checkbox" id="disc" name="disc"><label for="disc">Also show the reported 50% discount scenario <span class="hint" id="disc-h"></span></label></div>
   </form>
 
   <section class="card" id="result" aria-live="polite" aria-labelledby="rh">
-    <h2 id="rh" style="margin-top:0">Estimated TaxDome price from your renewal</h2>
+    <h2 id="rh" style="margin-top:0">TaxDome list price from your renewal</h2>
     <div id="out"></div>
   </section>
 </div>
 
 <section aria-labelledby="alth">
   <h2 id="alth">Alternatives for the same number of users</h2>
-  <p class="lead">Yearly list prices from our research, not quotes. Only tools with a documented price are listed. Prices here depend on users, not on client count.</p>
+  <p class="lead">Yearly list prices from our research (older and partly second-hand, see the sources table), not quotes. Only tools with a documented price are listed. Prices here depend on users, not on client count.</p>
   <div class="card"><table class="stack" id="alt"><thead><tr><th scope="col">Tool</th><th scope="col">Per year</th><th scope="col">Basis</th><th scope="col">What is missing or costs extra</th></tr></thead><tbody></tbody></table></div>
 </section>
 
 <section aria-labelledby="howh">
   <h2 id="howh">How this is calculated</h2>
-  <p><strong>This is an independent estimate, not information from TaxDome. Your actual quote can differ</strong>, for example because of negotiated discounts, credits for payments run through TaxDome, rollover of unused accounts, or contract terms.</p>
+  <p><strong>This is an independent calculation, not information from TaxDome. Your actual quote can differ.</strong> The TaxDome list price is derived from TaxDome's pricing page (taxdome.com/pricing, read Nov. 24, 2026) and checked against 17 values of TaxDome's own calculator.</p>
+  <h3>Price per extra client</h3>
+  <p>The first 150 active clients cost $1,500 per year, even with fewer than 150. Each active client above 150 is an extra client, priced in volume bands. TaxDome applies the lowest total for your size: the price is the lower of (extras x the rate of your band) and (the start of the next band x its rate), rounded up to whole dollars.</p>
+  <div class="card"><table class="stack" id="tiers"><thead><tr><th scope="col">Extra clients (active minus 150)</th><th scope="col">Per extra client</th></tr></thead><tbody></tbody></table></div>
+  <p id="tier-note" class="sub"></p>
   <ul id="how"></ul>
-  <h3>Where sources disagree</h3>
+  <h3>What the pricing page says</h3>
   <ul>
-    <li>Price per extra account: trade press says $12 down to $6 depending on pack size; a user-posted price card shows $12, $9 and $7.50 (prepaid) and $13.50, $10.50, $9 (mid-term). We show a range between them.</li>
-    <li>What counts as active: help-center and pricing page reportedly contradicted each other on logins; users say a login counts, a price tracker says it no longer does. Check your own account.</li>
-    <li>Old price: $1,000 per seat is the list price; users report paying $600 to $800 per seat or multi-year plans.</li>
-    <li>The 50% discount on extra accounts is a statement quoted in trade press, not on the pricing page. The terms are unknown.</li>
+    <li>Logins do not count. Logging in or browsing the app does not make a client active. Qualifying activity does, and a client stays active until your plan year ends.</li>
+    <li>Rollover: active clients you paid for but did not use roll into your next plan year in full, as bonus clients, and are used first. Bonus clients still unused after that year can roll over again, up to 20% of your next year's purchase. Carried-over clients cannot be refunded.</li>
+    <li>Growth during the year: at the end of each month TaxDome counts active clients above your plan and invoices the overage, starting at $15 per client. A volume pack bought at any time lowers the rate. The page does not say how a pack is priced; the estimate above treats it like the calculator's total for the larger size.</li>
+    <li>Multi-year plans: not offered right now. Plans are billed annually.</li>
+    <li>Add-ons: AI $200 per month, Managed Client Care $100 per month, Premium support $249 per month. White-labeled client app and Extended API: price on request. Only AI can be ticked above.</li>
+    <li>Above 3,000 active clients or 20 seats: custom pricing.</li>
+  </ul>
+  <h3>What the pricing page does not say</h3>
+  <ul>
+    <li>The 50% discount on extra clients for smaller existing customers. It comes from a statement by TaxDome's president quoted in trade press. Terms unknown. That is why it is shown as a separate scenario and never replaces the list price.</li>
+    <li>Whether you can renew at the old price before Jan. 1. The page only says current customers keep plan and price until their first renewal on or after Jan. 1. Ask your account team and get the answer in writing.</li>
+    <li>A prepay discount. Not on the page.</li>
+  </ul>
+  <h3>Limits of this calculation</h3>
+  <ul>
+    <li>Checked at 17 points of TaxDome's calculator, all exact. The band starts at 50 and 200 extra clients are only bracketed by those points, and the bands between 2,350 and 2,850 extra clients were not checked one by one. Values in between follow the lowest-total rule above.</li>
+    <li>Not modeled: rollover of unused clients, the Client Care, Premium support and other add-ons, taxes.</li>
+    <li>Old price: $1,000 per seat is the list price from trade press; users report paying $600 to $800 per seat or multi-year plans. Enter your own figure above.</li>
+    <li>Alternatives: monthly list price x 12 x users, annual billing, from vendor pages and user posts researched on 2026-11-24, partly second-hand. Per-return, identity-check and card fees are listed as extras, not added in. Prices change; check the vendor before deciding.</li>
   </ul>
   <h3>Prices and sources</h3>
   <div class="card"><table class="stack" id="src"><thead><tr><th scope="col">Item</th><th scope="col">Value</th><th scope="col">Source</th><th scope="col">As of</th><th scope="col">Confidence</th></tr></thead><tbody></tbody></table></div>
@@ -135,7 +156,7 @@ noscript{display:block;margin:1rem 0}
 </div>
 
 <script type="module">
-import { PRICES, estimate } from './pricing.js';
+import { PRICES, OFFICIAL_CHECKPOINTS, estimate } from './pricing.js';
 import { KIT } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -150,13 +171,16 @@ function link(text, url) {
 }
 function range(lo, hi) { return lo === hi ? money(lo) : money(lo) + ' to ' + money(hi); }
 
+// The sentence "Matches TaxDome's own pricing calculator" is only shown while all 17 checkpoints reproduce exactly.
+const OFFICIAL_OK = OFFICIAL_CHECKPOINTS.length === 17 && OFFICIAL_CHECKPOINTS.every(([a, p]) => estimate({ accounts: a, seats: 1 }).price === p);
+
 function read() {
-  const mode = document.querySelector('input[name=mode]:checked').value;
   const prevRaw = $('prev').value;
   return {
     accounts: num($('accounts').value), seats: num($('seats').value),
     previousAnnual: prevRaw.trim() === '' ? undefined : Number(prevRaw),
-    aiAddon: $('ai').checked, extraMode: mode,
+    addedDuringYear: $('grow').value.trim() === '' ? undefined : Number($('grow').value),
+    aiAddon: $('ai').checked,
     extraDiscountPct: $('disc').checked ? PRICES.td_discount_existing_pct.value : 0,
   };
 }
@@ -174,7 +198,7 @@ function row(parent, cells) {
 
 function render() {
   const input = read();
-  ['accounts', 'seats', 'prev'].forEach((k) => ($(k + '-e').textContent = ''));
+  ['accounts', 'seats', 'prev', 'grow'].forEach((k) => ($(k + '-e').textContent = ''));
   const r = estimate(input);
   const out = $('out');
   out.replaceChildren();
@@ -182,7 +206,7 @@ function render() {
   altBody.replaceChildren();
 
   if (!r.valid) {
-    const map = { accounts: 'accounts', seats: 'seats', previousAnnual: 'prev' };
+    const map = { accounts: 'accounts', seats: 'seats', previousAnnual: 'prev', addedDuringYear: 'grow' };
     r.errors.forEach((e) => { const t = map[e.field]; if (t) $(t + '-e').textContent = e.message; });
     out.append(el('p', 'Fix the highlighted field to see an estimate.'));
     return;
@@ -190,24 +214,39 @@ function render() {
   if (r.custom) {
     out.append(el('p', 'Custom pricing', { class: 'big' }), el('p', r.reason, { class: 'sub' }));
   } else {
-    out.append(el('p', range(r.low, r.high) + ' per year', { class: 'big' }));
-    out.append(el('p', 'Estimated range, billed yearly, starting at your first renewal on or after Jan. 1, 2027.', { class: 'sub' }));
+    out.append(el('p', money(r.price) + ' per year', { class: 'big' }));
+    out.append(el('p', 'TaxDome list price, billed yearly, from your first renewal on or after Jan. 1, 2027.', { class: 'sub' }));
+    if (OFFICIAL_OK) out.append(el('p', 'Matches TaxDome\'s own pricing calculator as of Nov 24, 2026.', { class: 'sub' }));
     const dl = el('dl');
     const add = (k, val) => { dl.append(el('dt', k), el('dd', val)); };
-    add('Base (first ' + PRICES.td_included_accounts.value + ' accounts, up to ' + PRICES.td_included_seats.value + ' users)', money(r.base));
-    add('Extra accounts (' + r.extraAccounts + ')', r.extraAccounts ? range(r.extraLow, r.extraHigh) : '$0');
-    if (r.discountPct) add('Discount on extras applied', r.discountPct + '%');
+    add('Base (first ' + PRICES.td_included_accounts.value + ' active clients, ' + PRICES.td_included_seats.value + ' seats)', money(r.base));
+    add('Extra clients (' + r.extraAccounts.toLocaleString('en-US') + (r.extraAccounts ? ', band from ' + money2(r.extraRate) + ' each' : '') + ')', money(r.extraTotal));
     if (r.ai) add('AI add-on', money(r.ai));
-    add('Per account per year', r.perAccountLow === r.perAccountHigh ? money2(r.perAccountLow) : money2(r.perAccountLow) + ' to ' + money2(r.perAccountHigh));
+    add('Per client per year', money2(r.perAccount));
+    add('Per client per month', money2(r.perAccount / 12));
     out.append(dl);
-    if (r.diffLow !== null) {
-      const sign = (n) => (n >= 0 ? '+' : '') + money(n);
-      const text = r.diffLow === r.diffHigh ? sign(r.diffLow) : sign(r.diffLow) + ' to ' + sign(r.diffHigh);
-      out.append(el('p', 'Compared with your current ' + money(r.previousAnnual) + ' per year: ' + text + ' per year.'));
+    if (r.diff !== null) {
+      const sign = (n) => (n >= 0 ? '+' : '-') + money(Math.abs(n));
+      out.append(el('p', 'Compared with your current ' + money(r.previousAnnual) + ' per year: ' + sign(r.diff) + ' per year.'));
     } else {
       out.append(el('p', 'For reference, the old list price was ' + money(r.legacyListEstimate) + ' for ' + input.seats + ' seat(s) at ' + money(PRICES.td_legacy_seat_list.value) + ' each. What you actually paid may differ; enter it above to see the difference.', { class: 'sub' }));
     }
-    out.append(el('p', 'Independent estimate. Not an offer or quote from TaxDome.', { class: 'note' }));
+    if (r.discounted !== null) {
+      const box = el('div', null, { class: 'note' });
+      box.append(el('strong', 'If the reported discount applies: ' + money(r.discounted) + ' per year'));
+      let t = ' (' + money2(r.perAccountDiscounted) + ' per client per year';
+      if (r.diffDiscounted !== null) t += '; ' + (r.diffDiscounted >= 0 ? '+' : '-') + money(Math.abs(r.diffDiscounted)) + ' against your current price';
+      box.append(document.createTextNode(t + '). The ' + r.discountPct + '% on extra clients was reported by trade press and is not on TaxDome\'s pricing page. Ask your account team and get it in writing.'));
+      out.append(box);
+    }
+    if (r.overage) {
+      const o = r.overage;
+      let t = 'If you add ' + o.added.toLocaleString('en-US') + ' clients mid-year without a pack: overage is invoiced monthly starting at $' + PRICES.td_overage_from.value + ' per client, so about ' + money(o.upperBound) + ' extra per year at most (rough upper bound, assuming $15 is the highest rate; the page says "starting at $15"; not a quote).';
+      if (o.buyAheadExtra !== null) t += ' Buying room for them up front instead costs ' + money(o.buyAheadExtra) + ' more (' + money(o.buyAheadPrice) + ' in total). Clients you pay for but do not use roll into the next plan year.';
+      else t += ' With them you would be above 3,000 active clients, where TaxDome quotes custom pricing.';
+      out.append(el('p', t));
+    }
+    out.append(el('p', 'Independent calculation. Not an offer or quote from TaxDome.', { class: 'note' }));
   }
   r.alternatives.forEach((a) => {
     const cell = el('div');
@@ -218,22 +257,26 @@ function render() {
 }
 
 function buildStatic() {
-  $('disc-h').textContent = 'Applies ' + PRICES.td_discount_existing_pct.value + '% off extra accounts. Reported in trade press; not on the pricing page.';
+  $('disc-h').textContent = 'Shows a second price with ' + PRICES.td_discount_existing_pct.value + '% off extra clients, next to the list price. Reported in trade press; not on the pricing page.';
   const how = $('how');
+  const T = PRICES.td_extra_tiers.value;
+  const tb = $('tiers').tBodies[0];
+  T.forEach(([from, rate], i) => {
+    const to = i + 1 < T.length ? T[i + 1][0] - 1 : null;
+    const ext = to === null ? from.toLocaleString('en-US') + '+' : from === to ? String(from) : from.toLocaleString('en-US') + ' to ' + to.toLocaleString('en-US');
+    row(tb, [['Extra clients', ext, 'num'], ['Per extra client', money2(rate), 'num']]);
+  });
+  $('tier-note').textContent = 'Example: 235 active clients = 85 extra clients x $12.00 = $1,020, plus $1,500 = $2,520. Because the lowest total applies, a few clients just below a band start cost the same as the band start (190 and 200 active clients both cost $2,100). The $5.00 band starts at 3,000 extra clients, which is above the 3,000-client limit; it only matters through the lowest-total rule (3,000 active clients = 3,000 x $5.00 + $1,500 = $16,500).';
   [
-    'Base: ' + money(PRICES.td_base_annual.value) + ' per year covers ' + PRICES.td_included_accounts.value + ' active accounts and up to ' + PRICES.td_included_seats.value + ' users. Above ' + PRICES.td_custom_above_accounts.value.toLocaleString('en-US') + ' accounts or ' + PRICES.td_included_seats.value + ' users TaxDome quotes custom pricing, so no number is shown.',
-    'Each account above ' + PRICES.td_included_accounts.value + ' adds the per-account price. Prepaid: from ' + money2(PRICES.td_extra_prepaid_floor.value) + ' up to ' + money2(PRICES.td_extra_prepaid_small.value) + ' (' + money2(PRICES.td_extra_prepaid_500.value) + ' at 500+ total accounts, ' + money2(PRICES.td_extra_prepaid_1000.value) + ' at 1,000+). On demand: ' + money2(PRICES.td_extra_ondemand_small.value) + ' (' + money2(PRICES.td_extra_ondemand_500.value) + ' at 500+, ' + money2(PRICES.td_extra_ondemand_1000.value) + ' at 1,000+) up to ' + money2(PRICES.td_extra_ondemand_single.value) + '; fewer than ' + PRICES.td_single_below_extras.value + ' extras are billed at ' + money2(PRICES.td_extra_ondemand_single.value) + ' each.',
-    'We assume the price tier depends on your total accounts. This is inferred from one reported bill, not stated by TaxDome.',
-    'AI add-on: ' + money(PRICES.td_ai_monthly.value) + ' per month, flat, so ' + money(PRICES.td_ai_monthly.value * 12) + ' per year.',
-    'Discount: if ticked, the percentage applies to extra accounts only, not to the base or the AI add-on.',
-    'Not modeled: credits for payments processed through TaxDome, rollover of unused accounts, a prepay discount mentioned by users, other add-ons, multi-year terms, taxes.',
-    'Alternatives: monthly list price x 12 x users, annual billing. Per-return, identity-check and card fees are listed as extras, not added in.',
-    'Research was done on 2026-11-24 from trade press (taxdome.com itself could not be read), a price tracker, vendor pages and user posts. Prices change; check the vendor before deciding.',
+    'Base: ' + money(PRICES.td_base_annual.value) + ' per year covers ' + PRICES.td_included_accounts.value + ' active clients and ' + PRICES.td_included_seats.value + ' seats. Above ' + PRICES.td_custom_above_accounts.value.toLocaleString('en-US') + ' active clients or ' + PRICES.td_included_seats.value + ' seats TaxDome quotes custom pricing, so no number is shown.',
+    'AI add-on: ' + money(PRICES.td_ai_monthly.value) + ' per month, so ' + money(PRICES.td_ai_monthly.value * 12) + ' per year, added to the total.',
+    'Discount scenario: if ticked, the percentage applies to extra clients only, not to the base or the AI add-on, rounded up to whole dollars.',
   ].forEach((t) => how.append(el('li', t)));
 
   const body = $('src').tBodies[0];
   for (const [key, p] of Object.entries(PRICES)) {
-    const val = Array.isArray(p.value) ? p.value.map((x) => '$' + x).join(' to ') : String(p.value);
+    const val = key === 'td_extra_tiers' ? p.value.map(([f, r]) => 'from ' + f + ': $' + r).join('; ')
+      : Array.isArray(p.value) ? p.value.map((x) => '$' + x).join(' to ') : String(p.value);
     const s = el('span'); s.append(link('Link', p.source));
     if (!/^https?:\/\//.test(p.source)) s.replaceChildren(document.createTextNode(p.source));
     const name = key.replace(/^alt_/, '').replace(/^td_/, 'TaxDome: ').replace(/_/g, ' ');
