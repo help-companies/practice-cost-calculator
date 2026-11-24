@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TaxDome 2027 Price Estimator</title>
+<meta name="description" content="Independent estimate of what TaxDome's per-active-client pricing will cost a small US tax practice from the 2027 renewal, with alternatives.">
+<style>
+:root{--bg:#fafaf7;--fg:#1c1c1a;--muted:#555550;--card:#fff;--line:#d6d6cf;--accent:#0b5c4a;--accent-fg:#fff;--warn-bg:#fff4d6;--warn-fg:#4a3500;--focus:#0b5c4a;}
+@media (prefers-color-scheme: dark){:root{--bg:#141413;--fg:#ececE6;--muted:#b0b0a6;--card:#1d1d1b;--line:#3a3a36;--accent:#6fd3b6;--accent-fg:#0d1a16;--warn-bg:#3a2f0e;--warn-fg:#f3e3b0;--focus:#6fd3b6;}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px 48px}
+header{padding:28px 0 8px}
+h1{font-size:1.7rem;line-height:1.2;margin:0 0 .5rem}
+h2{font-size:1.25rem;margin:2rem 0 .6rem}
+h3{font-size:1.05rem;margin:1.2rem 0 .4rem}
+p{margin:.4rem 0 .8rem}
+.lead{color:var(--muted);max-width:68ch}
+a{color:var(--accent)}
+a:focus-visible,input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.grid{display:grid;gap:16px;grid-template-columns:1fr}
+@media (min-width:760px){.grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr);align-items:start}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.field{margin-bottom:14px}
+label,legend{display:block;font-weight:600;margin-bottom:4px}
+.hint{display:block;font-size:.875rem;color:var(--muted);margin-top:2px;font-weight:400}
+input[type=number]{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--muted);border-radius:6px;background:var(--bg);color:var(--fg)}
+fieldset{border:0;padding:0;margin:0 0 14px}
+.check{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+.check input{margin-top:.3rem;width:1.1rem;height:1.1rem;flex:none}
+.check label{font-weight:400;margin:0}
+.err{color:#b00020;font-size:.9rem;margin-top:3px}
+@media (prefers-color-scheme: dark){.err{color:#ff8a98}}
+.big{font-size:2rem;font-weight:700;line-height:1.2;margin:.2rem 0}
+.sub{color:var(--muted);margin:0 0 .6rem}
+dl{margin:.6rem 0;display:grid;grid-template-columns:1fr auto;gap:4px 12px}
+dt{color:var(--muted)} dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.note{background:var(--warn-bg);color:var(--warn-fg);padding:10px 12px;border-radius:6px;font-size:.92rem;margin:.8rem 0}
+table{width:100%;border-collapse:collapse;font-size:.94rem}
+th,td{text-align:left;vertical-align:top;padding:8px 6px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+th{font-weight:600}
+td.num{white-space:nowrap;font-variant-numeric:tabular-nums}
+@media (max-width:640px){
+ table.stack thead{position:absolute;left:-9999px}
+ table.stack tr{display:block;border-bottom:1px solid var(--line);padding:6px 0}
+ table.stack td{display:block;border:0;padding:2px 0}
+ table.stack td::before{content:attr(data-label) ": ";font-weight:600}
+ .big{font-size:1.6rem}
+}
+ul{padding-left:1.2rem;margin:.4rem 0}
+li{margin:.25rem 0}
+.soon{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-weight:600;color:var(--muted)}
+.btn{display:inline-block;background:var(--accent);color:var(--accent-fg);padding:10px 16px;border-radius:6px;font-weight:600;text-decoration:none}
+footer{margin-top:2.5rem;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+.sr{position:absolute;left:-9999px}
+noscript{display:block;margin:1rem 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>What will TaxDome cost your practice after the switch to per-client pricing?</h1>
+  <p class="lead">Since Nov. 2, 2026 TaxDome charges per active client account instead of per seat. Existing customers move over at their first renewal on or after Jan. 1, 2027. Enter your numbers for an estimated yearly range and a comparison with other tools.</p>
+</header>
+<noscript>This estimator needs JavaScript. Nothing is sent anywhere; all math runs in your browser.</noscript>
+
+<main>
+<div class="grid">
+  <form class="card" id="f" novalidate aria-labelledby="fh">
+    <h2 id="fh" style="margin-top:0">Your practice</h2>
+    <div class="field">
+      <label for="accounts">Active client accounts</label>
+      <input id="accounts" name="accounts" type="number" inputmode="numeric" min="1" step="1" value="235" aria-describedby="accounts-h accounts-e">
+      <span class="hint" id="accounts-h">Clients who upload, e-sign, fill an organizer, pay, or message you in a 12-month window. A person and their business count as two accounts.</span>
+      <div class="err" id="accounts-e" role="alert"></div>
+    </div>
+    <div class="field">
+      <label for="seats">Users (seats)</label>
+      <input id="seats" name="seats" type="number" inputmode="numeric" min="1" step="1" value="1" aria-describedby="seats-e">
+      <div class="err" id="seats-e" role="alert"></div>
+    </div>
+    <div class="field">
+      <label for="prev">What you pay now, per year (optional)</label>
+      <input id="prev" name="prev" type="number" inputmode="decimal" min="0" step="1" placeholder="e.g. 700" aria-describedby="prev-e">
+      <div class="err" id="prev-e" role="alert"></div>
+    </div>
+    <fieldset>
+      <legend>Extra accounts above 150</legend>
+      <div class="check"><input type="radio" id="m-pre" name="mode" value="prepaid" checked><label for="m-pre">Buy ahead in packs at renewal</label></div>
+      <div class="check"><input type="radio" id="m-od" name="mode" value="on_demand"><label for="m-od">Add on demand during the year</label></div>
+    </fieldset>
+    <div class="check"><input type="checkbox" id="ai" name="ai"><label for="ai">Include the AI add-on</label></div>
+    <div class="check"><input type="checkbox" id="disc" name="disc"><label for="disc">I was offered a discount on extra accounts <span class="hint" id="disc-h"></span></label></div>
+  </form>
+
+  <section class="card" id="result" aria-live="polite" aria-labelledby="rh">
+    <h2 id="rh" style="margin-top:0">Estimated TaxDome price from your renewal</h2>
+    <div id="out"></div>
+  </section>
+</div>
+
+<section aria-labelledby="alth">
+  <h2 id="alth">Alternatives for the same number of users</h2>
+  <p class="lead">Yearly list prices from our research, not quotes. Only tools with a documented price are listed. Prices here depend on users, not on client count.</p>
+  <div class="card"><table class="stack" id="alt"><thead><tr><th scope="col">Tool</th><th scope="col">Per year</th><th scope="col">Basis</th><th scope="col">What is missing or costs extra</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section aria-labelledby="howh">
+  <h2 id="howh">How this is calculated</h2>
+  <p><strong>This is an independent estimate, not information from TaxDome. Your actual quote can differ</strong>, for example because of negotiated discounts, credits for payments run through TaxDome, rollover of unused accounts, or contract terms.</p>
+  <ul id="how"></ul>
+  <h3>Where sources disagree</h3>
+  <ul>
+    <li>Price per extra account: trade press says $12 down to $6 depending on pack size; a user-posted price card shows $12, $9 and $7.50 (prepaid) and $13.50, $10.50, $9 (mid-term). We show a range between them.</li>
+    <li>What counts as active: help-center and pricing page reportedly contradicted each other on logins; users say a login counts, a price tracker says it no longer does. Check your own account.</li>
+    <li>Old price: $1,000 per seat is the list price; users report paying $600 to $800 per seat or multi-year plans.</li>
+    <li>The 50% discount on extra accounts is a statement quoted in trade press, not on the pricing page. The terms are unknown.</li>
+  </ul>
+  <h3>Prices and sources</h3>
+  <div class="card"><table class="stack" id="src"><thead><tr><th scope="col">Item</th><th scope="col">Value</th><th scope="col">Source</th><th scope="col">As of</th><th scope="col">Confidence</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section aria-labelledby="kith">
+  <h2 id="kith">Switching Kit</h2>
+  <div class="card" id="kit"></div>
+</section>
+</main>
+
+<footer>
+  <p>Not affiliated with TaxDome or any vendor listed. Not tax, legal or financial advice.</p>
+  <p>This page sets no cookies. The numbers you enter stay in your browser and are never sent anywhere. Visits are counted anonymously with <a href="https://www.goatcounter.com/" rel="noopener">GoatCounter</a> (no cookies, no personal data).</p>
+</footer>
+</div>
+
+<script type="module">
+import { PRICES, estimate } from './pricing.js';
+import { KIT } from './config.js';
+
+const $ = (id) => document.getElementById(id);
+const money = (n) => (n < 0 ? '-$' : '$') + Math.abs(Math.round(n)).toLocaleString('en-US');
+const money2 = (n) => '$' + n.toFixed(2);
+const el = (tag, text, attrs) => { const e = document.createElement(tag); if (text != null) e.textContent = text; for (const k in (attrs||{})) e.setAttribute(k, attrs[k]); return e; };
+const num = (s) => (s.trim() === '' ? undefined : Number(s));
+
+function link(text, url) {
+  if (!/^https?:\/\//.test(url)) return document.createTextNode(url);
+  return el('a', text || url, { href: url, rel: 'noopener noreferrer', target: '_blank' });
+}
+function range(lo, hi) { return lo === hi ? money(lo) : money(lo) + ' to ' + money(hi); }
+
+function read() {
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  const prevRaw = $('prev').value;
+  return {
+    accounts: num($('accounts').value), seats: num($('seats').value),
+    previousAnnual: prevRaw.trim() === '' ? undefined : Number(prevRaw),
+    aiAddon: $('ai').checked, extraMode: mode,
+    extraDiscountPct: $('disc').checked ? PRICES.td_discount_existing_pct.value : 0,
+  };
+}
+
+function row(parent, cells) {
+  const tr = el('tr');
+  cells.forEach(([label, content, cls]) => {
+    const td = el('td', typeof content === 'string' ? content : null, { 'data-label': label });
+    if (cls) td.className = cls;
+    if (typeof content !== 'string') td.append(content);
+    tr.append(td);
+  });
+  parent.append(tr);
+}
+
+function render() {
+  const input = read();
+  ['accounts', 'seats', 'prev'].forEach((k) => ($(k + '-e').textContent = ''));
+  const r = estimate(input);
+  const out = $('out');
+  out.replaceChildren();
+  const altBody = $('alt').tBodies[0];
+  altBody.replaceChildren();
+
+  if (!r.valid) {
+    const map = { accounts: 'accounts', seats: 'seats', previousAnnual: 'prev' };
+    r.errors.forEach((e) => { const t = map[e.field]; if (t) $(t + '-e').textContent = e.message; });
+    out.append(el('p', 'Fix the highlighted field to see an estimate.'));
+    return;
+  }
+  if (r.custom) {
+    out.append(el('p', 'Custom pricing', { class: 'big' }), el('p', r.reason, { class: 'sub' }));
+  } else {
+    out.append(el('p', range(r.low, r.high) + ' per year', { class: 'big' }));
+    out.append(el('p', 'Estimated range, billed yearly, starting at your first renewal on or after Jan. 1, 2027.', { class: 'sub' }));
+    const dl = el('dl');
+    const add = (k, val) => { dl.append(el('dt', k), el('dd', val)); };
+    add('Base (first ' + PRICES.td_included_accounts.value + ' accounts, up to ' + PRICES.td_included_seats.value + ' users)', money(r.base));
+    add('Extra accounts (' + r.extraAccounts + ')', r.extraAccounts ? range(r.extraLow, r.extraHigh) : '$0');
+    if (r.discountPct) add('Discount on extras applied', r.discountPct + '%');
+    if (r.ai) add('AI add-on', money(r.ai));
+    add('Per account per year', r.perAccountLow === r.perAccountHigh ? money2(r.perAccountLow) : money2(r.perAccountLow) + ' to ' + money2(r.perAccountHigh));
+    out.append(dl);
+    if (r.diffLow !== null) {
+      const sign = (n) => (n >= 0 ? '+' : '') + money(n);
+      const text = r.diffLow === r.diffHigh ? sign(r.diffLow) : sign(r.diffLow) + ' to ' + sign(r.diffHigh);
+      out.append(el('p', 'Compared with your current ' + money(r.previousAnnual) + ' per year: ' + text + ' per year.'));
+    } else {
+      out.append(el('p', 'For reference, the old list price was ' + money(r.legacyListEstimate) + ' for ' + input.seats + ' seat(s) at ' + money(PRICES.td_legacy_seat_list.value) + ' each. What you actually paid may differ; enter it above to see the difference.', { class: 'sub' }));
+    }
+    out.append(el('p', 'Independent estimate. Not an offer or quote from TaxDome.', { class: 'note' }));
+  }
+  r.alternatives.forEach((a) => {
+    const cell = el('div');
+    const ul = el('ul'); a.gaps.forEach((g) => ul.append(el('li', g))); cell.append(ul);
+    const nameCell = el('span'); nameCell.append(document.createTextNode(a.name));
+    row(altBody, [['Tool', nameCell], ['Per year', range(a.low, a.high), 'num'], ['Basis', a.basis], ['Missing or extra', cell]]);
+  });
+}
+
+function buildStatic() {
+  $('disc-h').textContent = 'Applies ' + PRICES.td_discount_existing_pct.value + '% off extra accounts. Reported in trade press; not on the pricing page.';
+  const how = $('how');
+  [
+    'Base: ' + money(PRICES.td_base_annual.value) + ' per year covers ' + PRICES.td_included_accounts.value + ' active accounts and up to ' + PRICES.td_included_seats.value + ' users. Above ' + PRICES.td_custom_above_accounts.value.toLocaleString('en-US') + ' accounts or ' + PRICES.td_included_seats.value + ' users TaxDome quotes custom pricing, so no number is shown.',
+    'Each account above ' + PRICES.td_included_accounts.value + ' adds the per-account price. Prepaid: from ' + money2(PRICES.td_extra_prepaid_floor.value) + ' up to ' + money2(PRICES.td_extra_prepaid_small.value) + ' (' + money2(PRICES.td_extra_prepaid_500.value) + ' at 500+ total accounts, ' + money2(PRICES.td_extra_prepaid_1000.value) + ' at 1,000+). On demand: ' + money2(PRICES.td_extra_ondemand_small.value) + ' (' + money2(PRICES.td_extra_ondemand_500.value) + ' at 500+, ' + money2(PRICES.td_extra_ondemand_1000.value) + ' at 1,000+) up to ' + money2(PRICES.td_extra_ondemand_single.value) + '; fewer than ' + PRICES.td_single_below_extras.value + ' extras are billed at ' + money2(PRICES.td_extra_ondemand_single.value) + ' each.',
+    'We assume the price tier depends on your total accounts. This is inferred from one reported bill, not stated by TaxDome.',
+    'AI add-on: ' + money(PRICES.td_ai_monthly.value) + ' per month, flat, so ' + money(PRICES.td_ai_monthly.value * 12) + ' per year.',
+    'Discount: if ticked, the percentage applies to extra accounts only, not to the base or the AI add-on.',
+    'Not modeled: credits for payments processed through TaxDome, rollover of unused accounts, a prepay discount mentioned by users, other add-ons, multi-year terms, taxes.',
+    'Alternatives: monthly list price x 12 x users, annual billing. Per-return, identity-check and card fees are listed as extras, not added in.',
+    'Research was done on 2026-11-24 from trade press (taxdome.com itself could not be read), a price tracker, vendor pages and user posts. Prices change; check the vendor before deciding.',
+  ].forEach((t) => how.append(el('li', t)));
+
+  const body = $('src').tBodies[0];
+  for (const [key, p] of Object.entries(PRICES)) {
+    const val = Array.isArray(p.value) ? p.value.map((x) => '$' + x).join(' to ') : String(p.value);
+    const s = el('span'); s.append(link('Link', p.source));
+    if (!/^https?:\/\//.test(p.source)) s.replaceChildren(document.createTextNode(p.source));
+    const name = key.replace(/^alt_/, '').replace(/^td_/, 'TaxDome: ').replace(/_/g, ' ');
+    const item = el('span'); item.append(document.createTextNode(name));
+    if (p.note) item.append(el('br'), el('small', p.note));
+    row(body, [['Item', item], ['Value', val, 'num'], ['Source', s], ['As of', p.as_of, 'num'], ['Confidence', p.confidence]]);
+  }
+
+  const kit = $('kit');
+  kit.append(el('h3', KIT.title, { style: 'margin-top:0' }));
+  const ul = el('ul'); KIT.bullets.forEach((b) => ul.append(el('li', b))); kit.append(ul);
+  if (KIT.available && KIT.checkoutUrl) {
+    kit.append(link('Buy the kit' + (KIT.price ? ' (' + KIT.price + ')' : ''), KIT.checkoutUrl));
+    kit.lastChild.className = 'btn';
+  } else {
+    kit.append(el('p', 'Coming soon', { class: 'soon' }));
+  }
+}
+
+buildStatic();
+// Anonymous usage counts (GoatCounter). Only event names are sent, never the numbers entered.
+const track = (name) => { try { window.goatcounter?.count?.({ path: name, title: name, event: true }); } catch {} };
+let usedOnce = false;
+$('f').addEventListener('input', () => { if (!usedOnce) { usedOnce = true; track('calculator-used'); } });
+$('kit').addEventListener('click', (e) => { if (e.target.closest('a.btn')) track('kit-buy-click'); });
+$('f').addEventListener('input', render);
+$('f').addEventListener('submit', (e) => e.preventDefault());
+render();
+</script>
+<script data-goatcounter="https://vibe.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</body>
+</html>
